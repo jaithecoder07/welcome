@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cyberpunk Canvas 2026</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: linear-gradient(135deg, #ff2cdf, #4facfe);
+    font-family: 'Poppins', sans-serif;
+  }
+
+  canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  /* Buttons */
+  #playBtn, #discoBtn {
+    position: absolute;
+    bottom: 40px;
+    padding: 14px 22px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 20px;
+    color: white;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(255,0,255,0.4);
+    transition: 0.3s;
+  }
+
+  #playBtn { left: 40px; }
+  #discoBtn { left: 150px; }
+
+  #playBtn:hover, #discoBtn:hover {
+    transform: scale(1.1);
+  }
+
+  /* Welcome Message */
+  #welcome {
+    position: absolute;
+    top: 18%;
+    width: 100%;
+    text-align: center;
+    font-size: 48px;
+    font-family: 'Playfair Display';
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 0 15px #ff2cdf, 0 0 30px #ff2cdf;
+    animation: float 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  /* Quotes */
+  #quote {
+    position: absolute;
+    top: 28%;
+    width: 100%;
+    text-align: center;
+    font-size: 22px;
+    color: #e8f0ff;
+    font-weight: 300;
+    letter-spacing: 1px;
+    text-shadow: 0 0 12px #4facfe;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(10px); }
+    100% { transform: translateY(0px); }
+  }
+</style>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div id="welcome">✨ Welcome to 2026 ✨</div>
+<div id="quote"></div>
+
+<button id="playBtn">▶</button>
+<button id="discoBtn">🪩 Disco</button>
+
+<!-- Audio -->
+<audio id="music" loop>
+  <source src="wake_up_to_reality.mp3" type="audio/mp3">
+</audio>
+
+<!-- Bubble pop sound -->
+<audio id="popSound">
+  <source src="cat.mp3" type="audio/mp3">
+</audio>
+
+<script>
+/* -----------------------
+   CANVAS SETUP
+------------------------- */
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let mouseTrail = [];
+window.addEventListener("mousemove", e => {
+  mouseTrail.push({ x: e.clientX, y: e.clientY, alpha: 1 });
+});
+
+/* -----------------------
+    3D rotating cubes
+------------------------- */
+let angle = 0;
+function drawCube(x, y, size) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.fillStyle = "rgba(255,0,255,0.4)";
+  ctx.fillRect(-size/2, -size/2, size, size);
+  ctx.restore();
+}
+
+/* -----------------------
+    BUBBLES
+------------------------- */
+let bubbles = Array.from({ length: 20 }, () => ({
+  x: Math.random() * canvas.width,
+  y: canvas.height + Math.random() * 300,
+  r: Math.random() * 20 + 10,
+  speed: Math.random() * 1 + 0.5
+}));
+
+/* -----------------------
+   AUDIO VISUALIZER
+------------------------- */
+const music = document.getElementById("music");
+const ctxAudio = new AudioContext();
+const source = ctxAudio.createMediaElementSource(music);
+const analyser = ctxAudio.createAnalyser();
+source.connect(analyser);
+analyser.connect(ctxAudio.destination);
+analyser.fftSize = 128;
+
+let disco = false;
+
+/* -----------------------
+       Play / Pause
+------------------------- */
+let playing = false;
+playBtn.onclick = () => {
+  if (!playing) {
+    ctxAudio.resume();
+    music.play();
+    playBtn.textContent = "⏸";
+  } else {
+    music.pause();
+    playBtn.textContent = "▶";
+  }
+  playing = !playing;
+};
+
+/* -----------------------
+       Disco Mode
+------------------------- */
+discoBtn.onclick = () => disco = !disco;
+
+/* -----------------------
+      QUOTES ROTATION
+------------------------- */
+const quotes = [
+  "“Make this year unforgettable.”",
+  "“2026 is yours — take over.”",
+  "“Small steps, big energy.”",
+  "“Become the best version of you.”",
+  "“Dream. Build. Rise.”"
+];
+
+let quoteIndex = 0;
+const quoteEl = document.getElementById("quote");
+
+function cycleQuotes() {
+  quoteEl.style.opacity = 0;
+  setTimeout(() => {
+    quoteEl.textContent = quotes[quoteIndex];
+    quoteEl.style.opacity = 1;
+    quoteIndex = (quoteIndex + 1) % quotes.length;
+  }, 800);
+}
+
+cycleQuotes();
+setInterval(cycleQuotes, 3000);
+
+/* -----------------------
+      ANIMATE EVERYTHING
+------------------------- */
+function animate() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  /* Background */
+  const bg = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+  bg.addColorStop(0, disco ? "#ff00cc" : "#ff2cdf");
+  bg.addColorStop(1, disco ? "#00eaff" : "#4facfe");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  /* Cubes */
+  angle += 0.01;
+  drawCube(canvas.width * 0.3, canvas.height * 0.45, 90);
+  drawCube(canvas.width * 0.7, canvas.height * 0.6, 115);
+
+  /* Bubbles */
+  bubbles.forEach((b, i) => {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,255,0.18)";
+    ctx.fill();
+
+    b.y -= b.speed;
+    if (b.y < -20) {
+      bubbles[i].y = canvas.height + 50;
+      bubbles[i].x = Math.random() * canvas.width;
+    }
+  });
+
+  /* Equalizer bars */
+  let data = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(data);
+  let bw = canvas.width / data.length;
+  for (let i = 0; i < data.length; i++) {
+    let h = data[i];
+    ctx.fillStyle = `rgba(${h+100},20,${255-h},0.8)`;
+    ctx.fillRect(i * bw, canvas.height - h, bw - 2, h);
+  }
+
+  /* Mouse trail */
+  mouseTrail.forEach((p, i) => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${p.alpha})`;
+    ctx.fill();
+    p.alpha -= 0.02;
+  });
+  mouseTrail = mouseTrail.filter(p => p.alpha > 0);
+
+  requestAnimationFrame(animate);
+}
+animate();
+
+/* Bubble Pop */
+canvas.addEventListener("click", e => {
+  const pop = document.getElementById("popSound");
+  pop.currentTime = 0;
+  pop.play();
+
+  bubbles.push({
+    x: e.clientX,
+    y: e.clientY,
+    r: Math.random() * 20 + 15,
+    speed: Math.random() * 1 + 0.5
+  });
+});
+</script>
+
+</body>
+</html>
